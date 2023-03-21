@@ -3,6 +3,8 @@
   
   -->
   <div>
+    <el-switch v-model="draggable" active-text="开启拖拽" inactive-text="关闭拖拽">
+    </el-switch>
     <el-tree
       :data="menus"
       :props="defaultProps"
@@ -10,10 +12,9 @@
       node-key="catId"
       :expand-on-click-node="false"
       :default-expanded-keys="expandedKey"
-      draggable
+      :draggable="draggable"
       :allow-drop="allowDrop"
       @node-drop="handleDrop"
-
     >
       <span class="custom-tree-node" slot-scope="{ node, data }">
         <span>{{ node.label }}</span>
@@ -40,7 +41,6 @@
         </span>
       </span>
     </el-tree>
-
     <el-dialog
       :title="title"
       :visible.sync="dialogVisible"
@@ -77,9 +77,10 @@
 export default {
   data() {
     return {
-      updateNode:[],//拖拽节点后要修改的节点
+      draggable: false,
+      updateNodes: [], //拖拽节点后要修改的节点
       dialogType: "", //对话框区别，区别是点击append还是edit
-      maxLevel:0,
+      maxLevel: 0,
       title: "",
       catagory: {
         catId: null,
@@ -89,7 +90,7 @@ export default {
         showStatus: 1,
         sort: 0,
         productUnit: "",
-        icon: "" 
+        icon: "",
       },
       dialogVisible: false,
       menus: [],
@@ -101,8 +102,32 @@ export default {
     };
   },
   methods: {
+
+    getMenus() {
+      this.$http({
+        url: this.$http.adornUrl("/product/category/list/tree"),
+        method: "get",
+      }).then(({ data }) => {
+        // 大括号解构之后拿到data中的data列表
+        console.log("成功获取到data菜单数据:", data);
+        this.menus = data.page;
+      });
+    },
+
     handleNodeClick(data) {
       console.log(data);
+    },
+    updateChildNodeLevel(node) {
+      if (node.childNodes.length > 0) {
+        for (let i = 0; i < node.childNodes.length; i++) {
+          var cNode = node.childNodes[i].data;
+          this.updateNodes.push({
+            catId: cNode.catId,
+            catLevel: node.childNodes[i].level,
+          });
+          this.updateChildNodeLevel(node.childNodes[i]);
+        }
+      }
     },
     handleDrop(draggingNode, dropNode, dropType, ev) {
       console.log("handleDrop: ", draggingNode, dropNode, dropType);
@@ -119,7 +144,6 @@ export default {
         pCid = dropNode.data.catId;
         siblings = dropNode.childNodes;
       }
-      this.pCid.push(pCid);
 
       //2、当前拖拽节点的最新顺序，
       for (let i = 0; i < siblings.length; i++) {
@@ -136,7 +160,7 @@ export default {
             catId: siblings[i].data.catId,
             sort: i,
             parentCid: pCid,
-            catLevel: catLevel
+            catLevel: catLevel,
           });
         } else {
           this.updateNodes.push({ catId: siblings[i].data.catId, sort: i });
@@ -145,44 +169,45 @@ export default {
 
       //3、当前拖拽节点的最新层级
       console.log("updateNodes", this.updateNodes);
-
-      },
-    getMenus() {
       this.$http({
-        url: this.$http.adornUrl("/product/category/list/tree"),
-        method: "get",
+        url: this.$http.adornUrl("/product/category/update/sort"),
+        method: "post",
+        data: this.$http.adornData(this.updateNodes, false),
       }).then(({ data }) => {
-        // 大括号解构之后拿到data中的data列表
-        console.log("成功获取到data菜单数据:", data);
-        this.menus = data.page;
+        this.$message({
+          message: "菜单顺序等修该成功",
+          type: "success",
+        });
+        //刷新菜单
+        this.getMenus();
+        //设置默认展开菜单
+        this.expandedKey = [this.catagory.parentCid];
       });
     },
     //draggingNode当前正在拖动的节点,dropNode目标节点，type表示节点被拖拽到了目标的哪个位置
-    allowDrop(draggingNode, dropNode, type){
+    allowDrop(draggingNode, dropNode, type) {
       //1被拖动的当前节点以及所在的父节点总层数不能大于3
       //1)、被拖动的当前节点总层数
       console.log(draggingNode, dropNode, type);
-      this.countNodeLevel(draggingNode.data);//统计当前节点的总层数
-      let deep=(this.maxLevel-draggingNode.data.catLevel)+1;
-      console.log("深度：",deep);
-      if(type=="inner"){
-        return deep+dropNode.level<=3;
-      }else{
-        return deep+dropNode.parent.level<=3;
+      this.countNodeLevel(draggingNode.data); //统计当前节点的总层数
+      let deep = this.maxLevel - draggingNode.data.catLevel + 1;
+      console.log("深度：", deep);
+      if (type == "inner") {
+        return deep + dropNode.level <= 3;
+      } else {
+        return deep + dropNode.parent.level <= 3;
       }
     },
-    countNodeLevel(node){
-      if(node.children!=null&&node.children.length>0){
-        for(let i=0;i<node.children.length;i++){
-          if(node.children[i].catLevel>this.maxLevel){
-            this.maxLevel=node.children[i].catLevel;
+    countNodeLevel(node) {
+      if (node.children != null && node.children.length > 0) {
+        for (let i = 0; i < node.children.length; i++) {
+          if (node.children[i].catLevel > this.maxLevel) {
+            this.maxLevel = node.children[i].catLevel;
           }
           this.countNodeLevel(node.children[i]);
         }
       }
     },
-
-
     sbumitData() {
       if (this.dialogType == "add") {
         this.addCatagory();
@@ -197,7 +222,7 @@ export default {
         url: this.$http.adornUrl("/product/category/update"),
         method: "post",
         data: this.$http.adornData(
-          { catId: catId,name: name,icon: icon,productUnit: productUnit },
+          { catId: catId, name: name, icon: icon, productUnit: productUnit },
           // this.catagory,
           false
         ),
