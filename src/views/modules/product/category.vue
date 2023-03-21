@@ -5,6 +5,7 @@
   <div>
     <el-switch v-model="draggable" active-text="开启拖拽" inactive-text="关闭拖拽">
     </el-switch>
+    <el-button type="danger" @click="batchDelete">批量删除</el-button>
     <el-tree
       :data="menus"
       :props="defaultProps"
@@ -102,6 +103,12 @@ export default {
     };
   },
   methods: {
+    batchDelete(){
+
+    },
+
+
+
 
     getMenus() {
       this.$http({
@@ -113,7 +120,6 @@ export default {
         this.menus = data.page;
       });
     },
-
     handleNodeClick(data) {
       console.log(data);
     },
@@ -295,7 +301,6 @@ export default {
         this.expandedKey = [this.catagory.parentCid];
       });
     },
-
     remove(node, data) {
       var ids = [data.catId];
       this.$confirm(`是否删除当前菜单【${data.name}】, 是否继续?`, "提示", {
@@ -329,7 +334,5 @@ export default {
   },
 };
 </script>
-
-
 <style >
 </style>
