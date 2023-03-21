@@ -16,6 +16,7 @@
       :draggable="draggable"
       :allow-drop="allowDrop"
       @node-drop="handleDrop"
+      ref="menuTree"
     >
       <span class="custom-tree-node" slot-scope="{ node, data }">
         <span>{{ node.label }}</span>
@@ -104,7 +105,36 @@ export default {
   },
   methods: {
     batchDelete(){
-
+      let catIds=[];
+      let checkedNodes=this.$refs.menuTree.getCheckedNodes();
+      console.log("被选中的元素",checkedNodes);
+      for(let i=0;i<checkedNodes.length;i++){
+        catIds.push(checkedNodes[i].catId);
+      }
+      this.$confirm(`是否批量删除菜单【${catIds}】, 是否继续?`, "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      })
+        .then(() => {
+          this.$http({
+            url: this.$http.adornUrl("/product/category/delete"),
+            method: "post",
+            data: this.$http.adornData(catIds, false),
+          }).then(({ data }) => {
+            this.$message({
+              message: "批量删除菜单成功",
+              type: "success",
+            });
+            this.getMenus();
+          });
+        })
+        .catch(() => {
+          this.$message({
+              message: "操作取消",
+              type: "success",
+            });
+        });
     },
 
 
