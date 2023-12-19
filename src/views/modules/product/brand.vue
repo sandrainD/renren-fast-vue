@@ -143,7 +143,7 @@ export default {
           brandId: this.brandId
         })
       }).then(({ data }) => {
-        this.cateRelationTableData = data.data;
+        this.cateRelationTableData = data.page;
       });
     },
     // 获取数据列表
@@ -155,8 +155,8 @@ export default {
         params: this.$http.adornParams({
           page: this.pageIndex,
           limit: this.pageSize,
-          key: this.dataForm.key,
-        }),
+          key: this.dataForm.key
+        })
       }).then(({ data }) => {
         if (data && data.code === 0) {
           this.dataList = data.page.list;
@@ -173,7 +173,7 @@ export default {
       let { brandId, showStatus } = data;
       //发送请求修改状态
       this.$http({
-        url: this.$http.adornUrl("/product/brand/update"),
+        url: this.$http.adornUrl("/product/brand/update/status"),
         method: "post",
         data: this.$http.adornData({ brandId, showStatus }, false)
       }).then(({ data }) => {
