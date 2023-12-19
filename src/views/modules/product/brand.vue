@@ -143,7 +143,7 @@ export default {
           brandId: this.brandId
         })
       }).then(({ data }) => {
-        this.cateRelationTableData = data.page;
+        this.cateRelationTableData = data.data;
       });
     },
     // 获取数据列表
