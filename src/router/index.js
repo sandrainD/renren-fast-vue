@@ -154,6 +154,7 @@ function fnAddDynamicMenuRoutes (menuList = [], routes = []) {
     console.log(mainRoutes.children)
     console.log('%c!<-------------------- 动态(菜单)路由 e -------------------->', 'color:blue')
   }
+
 }
 
 export default router
